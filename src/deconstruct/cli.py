@@ -40,8 +40,13 @@ def filter(fname, imgname):
 
     img = to_ndarray(imread(imgname))
     out = tfrm(img)
-    out = to_pil_image(out)
-    out.save('output.png')
+    if isinstance(out, tuple):
+        for i, elem in enumerate(out):
+            elem = to_pil_image(elem)
+            elem.save('output-%d.png' % i)
+    else:
+        out = to_pil_image(out)
+        out.save('output.png')
 
 
 if __name__ == '__main__':

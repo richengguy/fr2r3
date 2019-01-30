@@ -3,10 +3,13 @@ channels:
   - conda-forge
   - default
 dependencies:
-  - matplotlib=3.0.2
-  - opencv=3.4.2
+  - matplotlib
+  - numpy
+  - pillow
   - python=3.7
-  - pywavelets=1.0.1
+  - pywavelets
+  - scikit-image
+  - scipy
   - pip:
     - click
     - flake8

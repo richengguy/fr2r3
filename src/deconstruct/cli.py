@@ -1,3 +1,4 @@
+import pathlib
 import sys
 
 import click
@@ -26,11 +27,18 @@ def ls():
 
 
 @main.command()
+@click.option('--outdir', '-o', type=click.Path(exists=True, file_okay=False),
+              help='Path to output directory.', default='.')
+@click.option('--format', '-f', type=click.Choice(['jpg', 'png']),
+              help='Output format.', default='png')
 @click.argument('fname', metavar='FILTER')
 @click.argument('imgname', metavar='IMAGE',
                 type=click.Path(dir_okay=False, exists=True))
-def filter(fname, imgname):
-    '''Apply the transform on to the image.'''
+def filter(outdir, format, fname, imgname):
+    '''Apply the transform on to the image.
+
+    The output will
+    '''
     try:
         tfrm = TRANSFORMS[fname]
     except KeyError:
@@ -38,15 +46,22 @@ def filter(fname, imgname):
         click.echo('Unknown filter "%s"' % fname)
         sys.exit(-1)
 
+    outdir = pathlib.Path(outdir)
+
+    click.echo('Applying %s...' % click.style(fname, fg='blue'))
     img = to_ndarray(imread(imgname))
     out = tfrm(img)
     if isinstance(out, tuple):
         for i, elem in enumerate(out):
+            outpath = outdir / ('%s-%d.%s' % (fname, i, format))
             elem = to_pil_image(elem)
-            elem.save('output-%d.png' % i)
+            elem.save(outpath)
+            click.echo('-- Saved %s' % click.style(str(outpath), fg='blue'))
     else:
         out = to_pil_image(out)
-        out.save('output.png')
+        outpath = outdir / ('%s.%s' % (fname, format))
+        out.save(outpath)
+        click.echo('-- Saved %s' % click.style(str(outpath), fg='blue'))
 
 
 if __name__ == '__main__':

@@ -1,5 +1,7 @@
 import matplotlib.cm as cm
 
+import numpy as np
+
 import skimage.color
 import skimage.feature
 import skimage.morphology
@@ -43,7 +45,9 @@ def hough(img, sigma=1.0):
     img = skimage.color.rgb2gray(img)
     edges = skimage.feature.canny(img, sigma=sigma,
                                   low_threshold=0.1, high_threshold=0.8)
-    hough, _, _ = skimage.transform.hough_line(edges)
+
+    angles = np.linspace(-np.pi, np.pi, edges.shape[1])
+    hough, _, _ = skimage.transform.hough_line(edges, angles)
 
     kh = edges.shape[0] / hough.shape[0]
     kw = edges.shape[1] / hough.shape[1]
@@ -51,8 +55,7 @@ def hough(img, sigma=1.0):
     hough = scipy.ndimage.zoom(hough, (kh, kw))
     hough = hough / hough.max()
 
-    hough = skimage.filters.median(hough, selem=skimage.morphology.square(5))
-
     outimg = cm.afmhot(hough)
+    outimg = skimage.color.rgba2rgb(outimg)
 
     return outimg, edges

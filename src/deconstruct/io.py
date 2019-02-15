@@ -80,7 +80,7 @@ def imread(fname, return_exif=False, inspect_exif=True):
     img = Image.open(fname)
     exif = img._getexif()
 
-    if inspect_exif:
+    if exif is not None and inspect_exif:
         orientation = get_orientation(img)
         if orientation == ExifOrientation.Rotate90:
             img = img.rotate(90, Image.BICUBIC, True)
@@ -156,7 +156,7 @@ def to_ndarray(img, sz=None, ignore_exif=False):
     data = data / 255.0
 
     # Finally, check to see if a rotation is required.
-    if not ignore_exif:
+    if exif is not None and not ignore_exif:
         if _EXIF_ORIENTATION in exif:
             rotation = ExifOrientation(exif[_EXIF_ORIENTATION])
         else:

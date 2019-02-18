@@ -31,13 +31,18 @@ def ls():
               help='Path to output directory.', default='.')
 @click.option('--format', '-f', type=click.Choice(['jpg', 'png']),
               help='Output format.', default='png')
+@click.option('--scale', '-s', type=click.FLOAT, default=1.0,
+              help='Scale the image prior to processing.')
 @click.argument('fname', metavar='FILTER')
 @click.argument('imgname', metavar='IMAGE',
                 type=click.Path(dir_okay=False, exists=True))
-def filter(outdir, format, fname, imgname):
+def filter(outdir, format, scale, fname, imgname):
     '''Apply the transform on to the image.
 
-    The output will
+    The filter will generate a new image, roughly the same size as the
+    original.  The exact output will depend on the filter, but in general, each
+    filter applies some sort of transform on the image and then visualizes the
+    result.
     '''
     try:
         tfrm = TRANSFORMS[fname]
@@ -50,7 +55,7 @@ def filter(outdir, format, fname, imgname):
 
     click.echo('Applying %s...' % click.style(fname, fg='blue'))
     img = to_ndarray(imread(imgname))
-    out = tfrm(img)
+    out = tfrm(img, scale=scale)
     if isinstance(out, tuple):
         for i, elem in enumerate(out):
             outpath = outdir / ('%s-%d.%s' % (fname, i, format))

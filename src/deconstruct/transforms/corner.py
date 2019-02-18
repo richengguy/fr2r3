@@ -3,7 +3,7 @@ import numpy as np
 import skimage.filters
 
 
-def corner(img, sigma=1.0):
+def corner(img, scale=1.0):
     '''Compute the structure tensor of an image.
 
     The structure tensor is computed independently for each channel and the
@@ -14,7 +14,7 @@ def corner(img, sigma=1.0):
     ----------
     img : numpy.ndarray
         image array
-    sigma : float
+    scale : float
         smoothing amount of the Gaussian pre-filter applied onto the image
 
     Returns
@@ -32,9 +32,9 @@ def corner(img, sigma=1.0):
         gy = skimage.filters.sobel_h(img[:, :, i])
 
         # Defines the three unique values in the structure tensor, S.
-        Ixx = skimage.filters.gaussian(gx * gx, sigma=sigma)
-        Ixy = skimage.filters.gaussian(gx * gy, sigma=sigma)
-        Iyy = skimage.filters.gaussian(gy * gy, sigma=sigma)
+        Ixx = skimage.filters.gaussian(gx * gx, sigma=scale)
+        Ixy = skimage.filters.gaussian(gx * gy, sigma=scale)
+        Iyy = skimage.filters.gaussian(gy * gy, sigma=scale)
 
         # Compute the corner response from the Eigenvalues.
         R[:, :, i] = ((Ixx + Iyy) - np.sqrt((Ixx - Iyy)**2 + 4*Ixy**2))/2

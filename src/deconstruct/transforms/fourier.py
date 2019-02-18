@@ -56,15 +56,15 @@ def fourier(img, scale=1):
         scaled_img = skimage.transform.rescale(img, 1.0/scale,
                                                anti_aliasing=True,
                                                mode='constant',
-                                               multichannel=False)
+                                               multichannel=True)
         h, w = scaled_img.shape[:2]
         img = np.zeros_like(img)
-        img[:h, :w] = scaled_img
+        img[:h, :w, :] = scaled_img
 
     channels = []
     for i in range(img.shape[2]):
         mag = _compute_dft(img[:, :, i])
-        psd = mag
+        psd = mag**2
 
         logpsd = np.log10(1.0 + psd)
         logpsd = (logpsd - np.min(logpsd)) / (np.max(logpsd) - np.min(logpsd))
@@ -74,4 +74,7 @@ def fourier(img, scale=1):
     out = np.dstack(channels)
     out = np.squeeze(out)
 
-    return out
+    if scale > 1:
+        return out, img
+    else:
+        return out

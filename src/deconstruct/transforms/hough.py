@@ -14,7 +14,7 @@ __all__ = [
 ]
 
 
-def hough(img, sigma=1.0):
+def hough(img, sigma=1.0, scale=1.0):
     '''Generates a Hough transform visualization.
 
     The visualization is obtained by first running an edge detector followed
@@ -34,6 +34,8 @@ def hough(img, sigma=1.0):
         input RGB image
     sigma : float
         smoothing amount for the Canny edge detector's Gaussian pre-filter
+    scale : float
+        amount to scale the image before processing
 
     Returns
     -------
@@ -43,17 +45,33 @@ def hough(img, sigma=1.0):
         edges used to generate for the SHT
     '''
     img = skimage.color.rgb2gray(img)
+    size = img.shape
+
+    if scale > 1:
+        img = skimage.transform.rescale(img, 1.0/scale, anti_aliasing=True,
+                                        mode='constant', multichannel=False)
+
     edges = skimage.feature.canny(img, sigma=sigma,
                                   low_threshold=0.1, high_threshold=0.8)
 
-    angles = np.linspace(-np.pi, np.pi, edges.shape[1])
+    angles = np.linspace(-np.pi, np.pi, size[1])
     hough, _, _ = skimage.transform.hough_line(edges, angles)
 
-    kh = edges.shape[0] / hough.shape[0]
-    kw = edges.shape[1] / hough.shape[1]
+    kh = size[0] / hough.shape[0]
+    kw = size[1] / hough.shape[1]
 
     hough = scipy.ndimage.zoom(hough, (kh, kw))
     hough = hough / hough.max()
+
+    hist, bins = np.histogram(hough[:], bins=256, range=(0, 1))
+
+    for i in reversed(range(256)):
+        if hist[i] > 25:
+            maxval = bins[i+1]
+            break
+
+    hough /= maxval
+    hough[hough > 1] = 1
 
     outimg = cm.afmhot(hough)
     outimg = skimage.color.rgba2rgb(outimg)

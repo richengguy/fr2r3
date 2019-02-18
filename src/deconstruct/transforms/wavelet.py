@@ -1,8 +1,9 @@
 import numpy as np
 import pywt
+import skimage.transform
 
 
-def wavelet(img, nlevels=3, wavelet='bior3.9'):
+def wavelet(img, nlevels=3, wavelet='db4', scale=1.0):
     '''Apply the DWT to an image.
 
     This does exactly what it says: applies a the Discrete Wavelet Transform
@@ -17,6 +18,8 @@ def wavelet(img, nlevels=3, wavelet='bior3.9'):
         number of levels in the DWT decomposition
     wavelet : str
         the wavelet type; must be one of the PyWavelet supported types
+    scale : float
+        a scaling factor applied to the image before processing
 
     Returns
     -------
@@ -25,6 +28,10 @@ def wavelet(img, nlevels=3, wavelet='bior3.9'):
     '''
     if img.ndim == 2:
         img = img[:, :, np.newaxis]
+
+    if scale > 1:
+        img = skimage.transform.rescale(img, 1.0/scale, anti_aliasing=True,
+                                        mode='constant', multichannel=True)
 
     wavelet = pywt.Wavelet(wavelet)
 
@@ -65,4 +72,10 @@ def wavelet(img, nlevels=3, wavelet='bior3.9'):
         channel, _ = pywt.coeffs_to_array(coeff)
         out.append(channel)
 
-    return np.dstack(out)
+    out = np.dstack(out)
+
+    if scale > 1:
+        out = skimage.transform.rescale(out, scale, anti_aliasing=True,
+                                        mode='constant', multichannel=True)
+
+    return out

@@ -78,7 +78,10 @@ def imread(fname, return_exif=False, inspect_exif=True):
         the image's EXIF data (only if ``return_exif`` is ``True``)
     '''
     img = Image.open(fname)
-    exif = img._getexif()
+    try:
+        exif = img._getexif()
+    except AttributeError:
+        exif = None
 
     if exif is not None and inspect_exif:
         orientation = get_orientation(img)
@@ -144,7 +147,7 @@ def to_ndarray(img, sz=None, ignore_exif=False):
     try:
         exif = img._getexif()
     except AttributeError:
-        ignore_exif = True
+        exif = None
 
     # Create a copy of the image before resizing it.
     img = img.copy()

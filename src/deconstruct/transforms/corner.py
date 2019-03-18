@@ -25,6 +25,9 @@ def corner(img, scale=1.0):
     if img.ndim == 2:
         img = img[:, :, np.newaxis]
 
+    img = skimage.transform.rescale(img, 1.0/2.0, anti_aliasing=True,
+                                    mode='constant', multichannel=True)
+
     R = np.zeros_like(img, dtype=np.float)
 
     for i in range(img.shape[2]):
@@ -45,8 +48,12 @@ def corner(img, scale=1.0):
         minval = min(minval, np.min(R[:, :, i]))
         maxval = max(maxval, np.max(R[:, :, i]))
 
+    maxval *= 0.5
     R = (R - minval) / (maxval - minval)
     R[R < 0] = 0
     R[R > 1] = 1
+
+    R = skimage.transform.rescale(R, 2.0, anti_aliasing=True,
+                                  mode='constant', multichannel=True)
 
     return R

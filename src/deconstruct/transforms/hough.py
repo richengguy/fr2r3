@@ -51,8 +51,7 @@ def hough(img, sigma=1.0, scale=1.0):
         img = skimage.transform.rescale(img, 1.0/scale, anti_aliasing=True,
                                         mode='constant', multichannel=False)
 
-    edges = skimage.feature.canny(img, sigma=sigma,
-                                  low_threshold=0.1, high_threshold=0.8)
+    edges = skimage.feature.canny(img, sigma=sigma)
 
     angles = np.linspace(-np.pi, np.pi, size[1])
     hough, _, _ = skimage.transform.hough_line(edges, angles)

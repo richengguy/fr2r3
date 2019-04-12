@@ -9,6 +9,7 @@ dependencies:
   - python=3.7
   - pywavelets
   - scikit-image
+  - scikit-learn
   - scipy
   - pip:
     - click

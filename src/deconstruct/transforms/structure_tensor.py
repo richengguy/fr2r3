@@ -66,7 +66,7 @@ def dotprod(a, b):
     return a[0]*b[0] + a[1]*b[1] + a[2]*b[2]
 
 
-def structure_tensor(img, scale=1.0):
+def compute(img, scale=1.0):
     '''Compute the structure tensor of an image.
 
     The structure tensor is computed using the RGB variant described in
@@ -98,9 +98,6 @@ def structure_tensor(img, scale=1.0):
     if img.ndim == 2:
         raise ValueError('Require RGB image to compute structure tensor.')
 
-    img = skimage.transform.rescale(img, 1.0/2.0, anti_aliasing=True,
-                                    mode='constant', multichannel=True)
-
     # Compute the derivatives.
     dfdx = x_derivative(img)
     dfdy = y_derivative(img)
@@ -115,8 +112,72 @@ def structure_tensor(img, scale=1.0):
     F = skimage.filters.gaussian(F, sigma=scale)
     G = skimage.filters.gaussian(G, sigma=scale)
 
-    # The final visualization is quite simple.  The hue is fixed while the
-    # saturation depends on 'F' while the value depends on 'E + G'.
+    return E, F, G
+
+
+def eigenvectors(E, F, G):
+    '''Compute the eigenvectors of the structure tensor.
+
+    The method used to obtain the eigenvectors is described in [cumani1989]_.
+
+    .. [cumani1989] Cumani, A. (1991). Edge Detection in Multispectral Images.
+       In: Graphical Models and Image Processing, pp. 40-51
+
+    Parameters
+    ----------
+    E, F, G : numpy.ndarray
+        the output of :meth:`compute`
+
+    Returns
+    -------
+    v1 : numpy.ndarry
+        a two-channel image containing the eigenvector of the major eigenvalue;
+        corresponds to edge normals
+    v2 : numpy.ndarray
+        a two-channel image containing the eigenvector of the minor eigenvalue;
+        corresponds to edge tangents
+    '''
+    EG = E + G
+    det = np.sqrt((E - G)**2 + 4*F**2)
+
+    l1 = (EG + det) / 2
+    l2 = (EG - det) / 2
+
+    theta = 0.5*np.arctan(2*F / (E - G))
+
+    v1 = np.stack((np.cos(theta), np.sin(theta)), axis=-1)
+    v2 = np.stack((-v1[:, :, 1], v1[:, :, 0]), axis=-1)
+
+    return l1[:, :, np.newaxis]*v1, l2[:, :, np.newaxis]*v2
+
+
+def visualize(img, scale=1.0):
+    '''Visualize the structure tensor.
+
+    The visualization uses the components of the structure tensor to set the
+    saturation and value of each pixel in the output image.  It is set up so
+    that long, linear segments appear white while corners are coloured.
+
+    Parameters
+    ----------
+    img : numpy.ndarray
+        input image
+    scale : float
+        smoothing amount of the Gaussian pre-filter applied onto the image
+
+    Returns
+    -------
+    numpy.ndarray
+        an RGB image that visualizes the eigenvectors within the structure
+        tensor
+    '''
+    img = skimage.transform.rescale(img, 1.0/2.0, anti_aliasing=True,
+                                    mode='constant', multichannel=True)
+
+    E, F, G = compute(img, scale)
+
+    # The visualization is quite simple.  The hue is fixed while the saturation
+    # depends on 'F' while the value depends on 'E + G'.
     R = np.zeros_like(img, dtype=np.float)
     R[:, :, 0] = 180
     R[:, :, 1] = F/np.max(F)

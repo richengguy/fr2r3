@@ -5,9 +5,9 @@ channels:
 dependencies:
   - matplotlib
   - numpy
+  - pip
   - pillow
   - python=3.7
-  - pywavelets
   - scikit-image
   - scikit-learn
   - scipy

@@ -62,7 +62,7 @@ def hough(img, scale=1.0):
     sigma : float
         smoothing amount for the Canny edge detector's Gaussian pre-filter
     scale : float
-        amount to scale the image before processing
+        value of the Gaussian filter's "sigma"
 
     Returns
     -------
@@ -75,11 +75,7 @@ def hough(img, scale=1.0):
     click.echo('The Hough implementation is not optimized; this will be very slow.')  # noqa: E501
 
     grey = skimage.color.rgb2gray(img)
-    if scale > 1:
-        grey = skimage.transform.rescale(grey, 1.0/scale, anti_aliasing=True,
-                                         mode='constant', multichannel=False)
-
-    grey = skimage.filters.gaussian(grey, 1.0/scale)
+    grey = skimage.filters.gaussian(grey, scale)
 
     # Compute the gradients.
     gx = skimage.filters.sobel_h(grey)

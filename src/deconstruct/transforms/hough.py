@@ -41,7 +41,7 @@ def _edge_map(gx, gy):
     return skimage.color.hsv2rgb(out)
 
 
-def hough(img, scale=1.0):
+def hough(img, scale=1.0, th=(16/256)):
     '''Generates a Hough transform visualization.
 
     The visualization is obtained by first running an edge detector followed
@@ -59,10 +59,10 @@ def hough(img, scale=1.0):
     ----------
     img : numpy.ndarray
         input RGB image
-    sigma : float
-        smoothing amount for the Canny edge detector's Gaussian pre-filter
     scale : float
-        value of the Gaussian filter's "sigma"
+        smoothing amount for the Canny edge detector's Gaussian pre-filter
+    th : float
+        scaling factor used to boost the exposure of the visualization
 
     Returns
     -------
@@ -88,7 +88,8 @@ def hough(img, scale=1.0):
     # weighting it by the magnitude.   This is a slightly modified version of
     # Algorithm 4.2 in "Computer Vision: Algorithm and Applications" by Richard
     # Szeliski.
-    x, y = np.meshgrid(np.arange(mag.shape[1]), np.arange(mag.shape[0]))
+    click.echo(' -- Pre-computing Hough indices.')
+    y, x = np.meshgrid(np.arange(mag.shape[1]), np.arange(mag.shape[0]))
 
     # Compute the line scalar parameters, given the normals.
     d = np.cos(ang)*x + np.sin(ang)*y
@@ -116,6 +117,7 @@ def hough(img, scale=1.0):
     jj = jj.astype(np.int)
 
     # Now, do the actual Hough transform.
+    click.echo(' -- Running Hough transform.')
     hough = np.zeros_like(d)
     for y in range(hough.shape[0]):
         for x in range(hough.shape[1]):
@@ -132,16 +134,10 @@ def hough(img, scale=1.0):
             hough[i2, j1] += mag[y, x]
             hough[i2, j2] += mag[y, x]
 
-    # Apply some histogram-based thresholding to make the accumulators a bit
-    # easier to see.
+    # Adjust the exposure so that the structure of the parameter space becomes
+    # obvious.
     hough = hough / hough.max()
-    hist, bins = np.histogram(hough[:], bins=256, range=(0, 1))
-    for i in reversed(range(256)):
-        if hist[i] > 25:
-            th = bins[i+1]
-            break
-
-    hough /= th
+    hough = hough / th
     hough[hough > 1] = 1
 
     out = cm.afmhot(hough)

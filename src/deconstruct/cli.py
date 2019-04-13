@@ -3,6 +3,7 @@ import sys
 
 import click
 
+from deconstruct.synthesize import SYNTHETIC_IMAGES
 from deconstruct.transforms import TRANSFORMS
 from deconstruct.io import imread, to_ndarray, to_pil_image
 
@@ -23,6 +24,10 @@ def ls():
     '''List the available transforms.'''
     click.secho('Transforms:', bold=True)
     for k in TRANSFORMS:
+        click.echo(' - %s' % k)
+
+    click.secho('Synthetic Images:', bold=True)
+    for k in SYNTHETIC_IMAGES:
         click.echo(' - %s' % k)
 
 
@@ -67,6 +72,39 @@ def filter(outdir, format, scale, fname, imgname):
         outpath = outdir / ('%s.%s' % (fname, format))
         out.save(outpath)
         click.echo('-- Saved %s' % click.style(str(outpath), fg='blue'))
+
+
+@main.command()
+@click.option('--outdir', '-o', type=click.Path(exists=True, file_okay=False),
+              help='Path to output directory.', default='.')
+@click.option('--format', '-f', type=click.Choice(['jpg', 'png']),
+              help='Output format.', default='png')
+@click.option('--size', type=click.INT, default=(512, 512), nargs=2,
+              metavar='WIDTH HEIGHT', help='Output size.')
+@click.argument('imgtype', metavar='TYPE')
+@click.argument('args', metavar='ARGS', nargs=-1, type=click.FLOAT)
+def synthesize(outdir, format, size, imgtype, args):
+    '''Generate a synthetic image.
+
+    The 'synthesize' command is used to generate a synthetic image with some
+    well-defined properties.  The list of availble image types can be obtained
+    using the 'ls' command.
+    '''
+    try:
+        method = SYNTHETIC_IMAGES[imgtype]
+    except KeyError:
+        click.secho('Error: ', bold=True, fg='red', nl=False)
+        click.echo('Unknown image type "%s"' % imgtype)
+        sys.exit(-1)
+
+    outdir = pathlib.Path(outdir)
+
+    click.echo('Generating %s...' % click.style(imgtype, fg='blue'))
+    out = method(size, *args)
+    out = to_pil_image(out)
+    outpath = outdir / ('%s.%s' % (imgtype, format))
+    out.save(outpath)
+    click.echo('-- Saved %s' % click.style(str(outpath), fg='blue'))
 
 
 if __name__ == '__main__':

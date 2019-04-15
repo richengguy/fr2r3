@@ -31,7 +31,7 @@ def generate_samples(width, height, samples):
     return np.transpose(np.c_[x, y])
 
 
-def colour(img, scale=1.0, samples=50000):
+def colour(img, scale=1.0, samples=10000):
     '''Model the distribution of colours in an image.
 
     The method models the distribution of the values in the chroma channels of
@@ -65,35 +65,52 @@ def colour(img, scale=1.0, samples=50000):
 
     img = skimage.transform.rescale(img, 1.0/scale, anti_aliasing=True,
                                     mode='constant', multichannel=True)
-    img = skimage.color.rgb2yuv(img)
+    img = skimage.color.rgb2hsv(img)
     height, width = img.shape[0:2]
 
     # Extract the colour vectors and sample from them.
     ind = generate_samples(width, height, samples)
-    X = np.squeeze(img[ind[1, :], ind[0, :], 1:3])
+    X = np.squeeze(img[ind[1, :], ind[0, :], 0:2])
+
+    # Convert a polar to cartesian coordinate conversation (will make the
+    # visualization easier).
+    mag = X[:, 1]
+    ang = 2*np.pi*X[:, 0]
+
+    X[:, 0] = mag*np.cos(ang)
+    X[:, 1] = mag*np.sin(ang)
 
     # Perform a density estimation using a GMM.
     gmm = BayesianGaussianMixture(
         n_components=25,
         weight_concentration_prior_type='dirichlet_distribution',
         weight_concentration_prior=1e-3)
-    # gmm = KernelDensity(bandwidth=0.5)
     gmm.fit(X)
 
     # Generate the output array.
-    u, v = np.meshgrid(np.linspace(-0.5, 0.5, width),
-                       np.linspace(-0.5, 0.5, height))
-    x = np.c_[u.flatten(), v.flatten()]
-    scores = np.exp(gmm.score_samples(x))
+    x, y = np.meshgrid(np.linspace(-1, 1, width), np.linspace(-1, 1, height))
+    X = np.c_[x.flatten(), y.flatten()]
+    scores = np.exp(gmm.score_samples(X))
     max_score = np.max(scores)
 
     # Apply a gamma correction to make the image look a bit nicer.
-    Y = np.reshape(scores, (height, width))
-    Y = (Y / max_score)**0.4
+    val = np.reshape(scores, (height, width)) / max_score
+    val = skimage.exposure.adjust_gamma(val, gamma=0.3)
 
-    # Convert back from Yuv to RGB.
-    output = np.dstack((Y, Y*u, Y*v))
-    output = skimage.color.yuv2rgb(output)
+    # Convert back from HSV to RGB.  The saturation needs to be clamped so that
+    # it doesn't produce invalid values during the HSV->RGB conversion.
+    mag = x**2 + y**2
+    sat = np.sqrt(mag)
+    sat[sat > 1] = 1
+
+    # The hue also needs to be adjust since atan2() returns a value between
+    # -pi and pi, but the hue needs to be between 0 an 1.
+    hue = np.arctan2(y, x)
+    hue[hue < 0] = hue[hue < 0] + 2*np.pi
+    hue /= 2*np.pi
+
+    output = np.dstack((hue, sat, val))
+    output = skimage.color.hsv2rgb(output)
     output = skimage.transform.rescale(output, scale, anti_aliasing=True,
                                        mode='constant', multichannel=True)
 

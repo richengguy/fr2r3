@@ -3,19 +3,18 @@ import sys
 
 import click
 
-from deconstruct.synthesize import SYNTHETIC_IMAGES
-from deconstruct.transforms import TRANSFORMS
-from deconstruct.io import imread, to_ndarray, to_pil_image
+from fr2r3.synthesize import SYNTHETIC_IMAGES
+from fr2r3.transforms import TRANSFORMS
+from fr2r3.io import imread, to_ndarray, to_pil_image
 
 
 @click.group()
 def main():
-    '''Apply some sort of transformation onto an image.
+    '''Apply a transform operator onto an image.
 
-    The photo-deconstruct application will apply a transformation (e.g.
-    Fourier) onto the provided image.  The transforms are meant for
-    visualization purposes. Therefore, the results are modified in such a way
-    that they are pleasant to view.
+    The fr2r3 application will apply a transformation (e.g. Fourier transform)
+    onto the provided image.  The transforms are meant for visualization
+    purposes and have been modified to be visually pleasing.
     '''
 
 
@@ -44,10 +43,11 @@ def ls():
 def filter(outdir, format, scale, fname, imgname):
     '''Apply the transform on to the image.
 
-    The filter will generate a new image, roughly the same size as the
-    original.  The exact output will depend on the filter, but in general, each
-    filter applies some sort of transform on the image and then visualizes the
-    result.
+    The 'filter' command will generate a new image, roughly the same size as
+    the original.  The exact output will depend on the filter, but in general,
+    each filter applies some sort of transform on the image and then visualizes
+    the result.  The list of available filters can be obtained through the 'ls'
+    command.
     '''
     try:
         tfrm = TRANSFORMS[fname]

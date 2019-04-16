@@ -1,0 +1,9 @@
+repository: richengguy/fr2r3
+plugins:
+  - jekyll-relative-links
+relative_links:
+  enabled: true
+  collections: true
+include:
+  - README.md
+  - docs/index.md

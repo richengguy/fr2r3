@@ -8,4 +8,4 @@ include:
   - README.md
   - docs/index.md
 
-theme: jekyll-theme-minimal
+theme: jekyll-theme-cayman
